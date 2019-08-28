@@ -2,7 +2,7 @@ extern crate image;
 use image::{RgbImage};
 use image::imageops::{blur, rotate90};
 
-pub trait ImageOperation {
+pub trait ImageOperation : Sync {
     fn transform(&self, im:&RgbImage) -> RgbImage;
 }
 

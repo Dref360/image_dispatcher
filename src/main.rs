@@ -1,8 +1,11 @@
 extern crate image;
+extern crate rayon;
 mod transformers;
 use image::{open, RgbImage};
 use std::env;
 pub use transformers::*;
+use rayon::prelude::*;
+use std::fs;
 
 struct Pipeline<'a>{
     tfs: Vec<&'a dyn ImageOperation>,
@@ -40,17 +43,15 @@ impl PathPipeline for Pipeline<'_> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let path = &args[1];
-    let im : &RgbImage = &open(path).unwrap().to_rgb();
+    let folder = &args[1];
+    let files : Vec<_> = fs::read_dir(folder).unwrap().map(|r| r.unwrap().path().into_os_string().into_string().unwrap())
+                                              .collect();
     let pipeline = Pipeline{
         tfs: vec![&BlurTransformer{sigma: 1.0},
                   &Rot90Transformer{}]
     };
-    let mut out = ImagePipeline::execute(&pipeline, im);
-    out.save("p.png").unwrap();
-    println!("Hello, world!");
-    out = PathPipeline::execute(&pipeline, path);
-    out.save("q.png").unwrap();
+    let _outs : Vec<_> = files.into_par_iter().map(|p| PathPipeline::execute(&pipeline, &p)).collect();
+    
     println!("Hello, world!");
 
 }
